@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vcl-mysql
+  labels:
+    app: vcl
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: vcl
+    tier: mysql
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+    app: vcl
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: vcl-mysql
+  labels:
+    app: vcl
+spec:
+  selector:
+    matchLabels:
+      app: vcl
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: vcl
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vcl-secrets
+              key: mysql_root_pass
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
