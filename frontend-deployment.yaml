@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vcl-web
+  labels:
+    app: vcl
+spec:
+  ports:
+  - name: http
+    protocol: TCP    
+    port: 80
+  - name: https
+    protocol: TCP    
+    port: 443
+  selector:
+    app: vcl
+    tier: web
+  type: NodePort
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: vcl-web
+  labels:
+    app: vcl
+spec:
+  selector:
+    matchLabels:
+      app: vcl
+      tier: web
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: vcl
+        tier: web
+    spec:
+      containers:
+      - image: junaid/vcl-www:k8s
+        name: web
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        env:
+        - name: MYSQL_HOST
+          value: "vcl-mysql"
+        - name: MYSQL_DATABASE
+          value: "vcl"
+        - name: MYSQL_USER
+          value: "vcl"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vcl-secrets
+              key: mysql_user_pass
+        - name: VCL_CRYPT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: vcl-secrets
+              key: web_crypt_key
+        - name: VCL_PEM_KEY
+          valueFrom:
+            secretKeyRef:
+              name: vcl-secrets
+              key: web_pem_key

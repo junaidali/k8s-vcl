@@ -48,8 +48,11 @@ spec:
       - image: mysql:5.6
         name: mysql
         env:
-        - name: MYSQL_RANDOM_ROOT_PASSWORD
-          value: "yes"
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vcl-secrets
+              key: mysql_root_pass
         - name: MYSQL_DATABASE
           value: "vcl"
         - name: MYSQL_USER
