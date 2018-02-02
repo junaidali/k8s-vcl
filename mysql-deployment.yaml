@@ -43,6 +43,8 @@ spec:
       labels:
         app: vcl
         tier: mysql
+      annotations:
+        cni: "calico"
     spec:
       containers:
       - image: mysql:5.6

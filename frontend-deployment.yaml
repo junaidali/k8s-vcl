@@ -9,9 +9,11 @@ spec:
   - name: http
     protocol: TCP    
     port: 80
+    targetPort: 80
   - name: https
     protocol: TCP    
     port: 443
+    targetPort: 443
   selector:
     app: vcl
     tier: web
@@ -35,9 +37,12 @@ spec:
       labels:
         app: vcl
         tier: web
+      annotations:
+        cni: "calico"
     spec:
       containers:
       - image: junaid/vcl-www:k8s
+        imagePullPolicy: Always
         name: web
         ports:
         - containerPort: 80

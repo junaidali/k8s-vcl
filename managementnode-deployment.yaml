@@ -1,0 +1,37 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: vcl-mgmt
+  labels:
+    app: vcl
+spec:
+  selector:
+    matchLabels:
+      app: vcl
+      tier: mgmt
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: vcl
+        tier: mgmt
+      annotations:
+        cni: "calico,macvlan"
+    spec:
+      containers:
+      - image: junaid/vcl-mgmt:k8s
+        imagePullPolicy: Always
+        name: mgmt        
+        env:
+        - name: MYSQL_HOST
+          value: "vcl-mysql"
+        - name: MYSQL_DATABASE
+          value: "vcl"
+        - name: MYSQL_USER
+          value: "vcl"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vcl-secrets
+              key: mysql_user_pass
