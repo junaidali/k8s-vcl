@@ -52,7 +52,7 @@ nginx-proxy-w2                          1/1       Running   0          10d
 sudo ip link set ens192 promisc on
 ```
 
-5. The VMWare switch where this network interface will be connected also needs to have promiscuous mode enabled. 
+5. The VMWare switch where this network interface will be connected also needs to have promiscuous mode enabled.
 ![VMWare Promiscuous Mode](images/vmware-promiscuous-mode.png)
 
 6. CNI DHCP Server Daemon configured. This can be setup on systemd enabled system using below steps:
@@ -90,5 +90,43 @@ sudo ip link set ens192 promisc on
 This section describes the deployment of the VCL application
 
 ## Configuration
+You will need to perform storage and secrets configuration before the VCL service can be launched in Kubernetes.
+
+### Update storage Configuration
+You will need to create persistent storage for the MySQL data. Refer to [Kubernetes Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) for more information.
+
+For testing purposes, you can use local storage using the local-volumes.yaml file that stores data in the /tmp/data/pv-1 volume.
+
+### Update Secrets
+VCL website and management node information is stored within secrets. Refer to [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for more information.
+
+Update the secrets.yaml file with the following information. all the below secrets can be generated using, where <text> is the text that needs to be encrypted.
+
+```
+$ echo "<text>" | base64
+```
+
+mysql_root_pass: Root password for MySQL
+mysql_user_pass: vcl user MySQL password
+web_crypt_key: cryptography key
+web_pem_key: cryptography key
+xmlrpc_pass: XML RPC password
+xmlrpc_username: XML RPC username
 
 ## Deployment
+Create the deployment in the following order.
+```
+If using local volumes, else use your storage file,
+$ kubectl create -f local-volumes.yml
+
+$ kubectl create -f secrets.yaml
+$ kubectl create -f mysql-deployment.yaml
+$ kubectl create -f frontend-deployment.yaml
+$ kubectl create -f managementnode-deployment.yaml
+```
+
+Verify if the resources have been created successfully
+
+
+## VCL Configuation
+Once the resources have been deployment
