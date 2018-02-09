@@ -36,7 +36,7 @@ kubernetes-dashboard-85d88b455f-q92t4   1/1       Running   0          10d
 nginx-proxy-w1                          1/1       Running   0          10d
 nginx-proxy-w2                          1/1       Running   0          10d
 ```
-3. [macvlan](https://github.com/containernetworking/plugins/tree/master/plugins/main/macvlan) plugin configured on the worker nodes where the VCL management daemon pod will be running. This is needed for providing access to the private VM Network on the management nodes. A sample macvlan configuration file (/etc/cni/net.d/20-macvlan.conf) is shown below. This file should be available on each minion where the management node pod will be running.
+3. [macvlan](https://github.com/containernetworking/plugins/tree/master/plugins/main/macvlan) plugin configured on the worker nodes where the VCL management daemon pod will be running. This is needed for providing access to the private VM Network on the management nodes. A sample macvlan configuration file (/etc/cni/net.d/20-macvlan.conf) is shown below. This file should be available on each minion where the management node pod will be running. Replace the "master" with the network interface that is connected to the private VM Network.
 ```
 {
 	"name": "vmprivate",
@@ -52,7 +52,7 @@ nginx-proxy-w2                          1/1       Running   0          10d
 sudo ip link set ens192 promisc on
 ```
 
-5. The VMWare switch where this network interface will be connected also needs to have promiscuous mode enabled
+5. The VMWare switch where this network interface will be connected also needs to have promiscuous mode enabled. 
 ![VMWare Promiscuous Mode](images/vmware-promiscuous-mode.png)
 
 6. CNI DHCP Server Daemon configured. This can be setup on systemd enabled system using below steps:
