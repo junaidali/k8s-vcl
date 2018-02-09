@@ -35,3 +35,15 @@ spec:
             secretKeyRef:
               name: vcl-secrets
               key: mysql_user_pass
+        - name: XMLRPC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vcl-secrets
+              key: xmlrpc_pass
+        - name: XMLRPC_USER
+          valueFrom:
+            secretKeyRef:
+              name: vcl-secrets
+              key: xmlrpc_username
+        - name: XMLRPC_URL
+          value: "https://vcl.corp.local/vcl/index.php?mode=xmlrpccall"

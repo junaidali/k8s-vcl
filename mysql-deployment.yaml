@@ -10,7 +10,7 @@ spec:
   selector:
     app: vcl
     tier: mysql
-  clusterIP: None
+  type: NodePort
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
