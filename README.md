@@ -100,7 +100,7 @@ For testing purposes, you can use local storage using the local-volumes.yaml fil
 ### Update Secrets
 VCL website and management node information is stored within secrets. Refer to [Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for more information.
 
-Update the secrets.yaml file with the following information. all the below secrets can be generated using, where <text> is the text that needs to be encrypted.
+Update the secrets.yaml file with the following information. all the below secrets can be generated using, where `<text>` is the text that needs to be encrypted.
 
 ```
 $ echo "<text>" | base64
@@ -114,19 +114,192 @@ xmlrpc_pass: XML RPC password
 xmlrpc_username: XML RPC username
 
 ## Deployment
-Create the deployment in the following order.
+### Storage and configuration details
+Create the local storage persistent volumes and secrets used by the pods.
 ```
 If using local volumes, else use your storage file,
 $ kubectl create -f local-volumes.yml
 
 $ kubectl create -f secrets.yaml
+```
+
+### MySQL database
+Create the MySQL pod
+```
 $ kubectl create -f mysql-deployment.yaml
+```
+
+Verify if the MySQL resources have been created successfully
+```
+$ kubectl get pod
+NAME                         READY     STATUS    RESTARTS   AGE
+vcl-mysql-764776f4b8-pd59x   1/1       Running   0          12d
+```
+
+Verify if the MySQL database services have been created and exposed
+```
+$ kubectl get service
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+kubernetes   ClusterIP   10.233.0.1      <none>        443/TCP                      13d
+vcl-mysql    NodePort    10.233.38.120   <none>        3306:31359/TCP               4d
+```
+
+Load the VCL database using the database file provided as part of the [Apache VCL Download](https://vcl.apache.org/downloads/download.cgi).
+```
+$ kubectl exec -it <vcl-mysql-pod-name> mysql -u root -p <MySQL Root user password from secrets.yaml> vcl < ~/apache-VCL-2.5/mysql/vcl.sql
+
+e.g. if the pod name is vcl-mysql-764776f4b8-pd59x and the mysql root password is s3cr3t,
+$ kubectl exec -it vcl-mysql-764776f4b8-pd59x mysql -u root -p s3cr3t vcl < ~/apache-VCL-2.5/mysql/vcl.sql
+```
+
+Verify if the database is loaded correctly
+```
+$ kubectl exec -it <vcl-mysql-pod-name> sh
+# mysql -u root -p
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| vcl                |
++--------------------+
+mysql> use vcl;
+mysql> show tables;
++---------------------------+
+| Tables_in_vcl             |
++---------------------------+
+| IMtype                    |
+| OS                        |
+| OSinstalltype             |
+| OStype                    |
+| addomain                  |
+| adminlevel                |
+| affiliation               |
+| blockComputers            |
+| blockRequest              |
+| blockTimes                |
+| blockWebDate              |
+| blockWebTime              |
+| changelog                 |
+| clickThroughs             |
+| computer                  |
+| computerloadflow          |
+| computerloadlog           |
+| computerloadstate         |
+| connectlog                |
+| connectmethod             |
+| connectmethodmap          |
+| connectmethodport         |
+| continuations             |
+| cryptkey                  |
+| cryptsecret               |
+| documentation             |
+| image                     |
+| imageaddomain             |
+| imagemeta                 |
+| imagerevision             |
+| imagerevisioninfo         |
+| imagetype                 |
+| localauth                 |
+| log                       |
+| loginlog                  |
+| managementnode            |
+| module                    |
+| nathost                   |
+| nathostcomputermap        |
+| natlog                    |
+| natport                   |
+| oneclick                  |
+| openstackcomputermap      |
+| openstackimagerevision    |
+| platform                  |
+| privnode                  |
+| provisioning              |
+| provisioningOSinstalltype |
+| querylog                  |
+| request                   |
+| reservation               |
+| reservationaccounts       |
+| resource                  |
+| resourcegroup             |
+| resourcegroupmembers      |
+| resourcemap               |
+| resourcepriv              |
+| resourcetype              |
+| schedule                  |
+| scheduletimes             |
+| semaphore                 |
+| serverprofile             |
+| serverrequest             |
+| shibauth                  |
+| sitemaintenance           |
+| state                     |
+| statgraphcache            |
+| subimages                 |
+| sublog                    |
+| user                      |
+| usergroup                 |
+| usergroupmembers          |
+| usergrouppriv             |
+| usergroupprivtype         |
+| userpriv                  |
+| userprivtype              |
+| variable                  |
+| vcldsemaphore             |
+| vmhost                    |
+| vmprofile                 |
+| vmtype                    |
+| winKMS                    |
+| winProductKey             |
+| xmlrpcLog                 |
++---------------------------+
+84 rows in set (0.00 sec)
+mysql> \q
+Bye
+# exit
+```
+
+### Website & Management Daemon
+Once the MySQL database is created, we can create the website and management node daemon pods as below
+```
 $ kubectl create -f frontend-deployment.yaml
 $ kubectl create -f managementnode-deployment.yaml
 ```
 
-Verify if the resources have been created successfully
+Verify if the pods have been created
+```
+$ kubectl get pods
+NAME                         READY     STATUS    RESTARTS   AGE
+vcl-mgmt-6f5c585777-s9h49    1/1       Running   0          4d
+vcl-mysql-764776f4b8-pd59x   1/1       Running   0          12d
+vcl-web-7f9df965bb-b5rfn     1/1       Running   0          10d
+```
+
+Verify if the VCL website services have been created and exposed
+```
+$ kubectl get service
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+kubernetes   ClusterIP   10.233.0.1      <none>        443/TCP                      13d
+vcl-mysql    NodePort    10.233.38.120   <none>        3306:31359/TCP               4d
+vcl-web      NodePort    10.233.29.129   <none>        80:32682/TCP,443:30758/TCP   10d
+```
 
 
 ## VCL Configuation
-Once the resources have been deployment
+Once the resources have been deployment, perform the following configuration. Refer to [Administering VCL](https://cwiki.apache.org/confluence/display/VCL/Administering+VCL) for more information.
+
+### Add management nodes to allManagementNode group
+
+
+### Configure VMHost Profiles
+
+
+### Add VMHosts
+
+
+### Add VM's
+
+
+### Create Base Images
