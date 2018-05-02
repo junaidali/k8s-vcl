@@ -7,16 +7,19 @@ This project allows for deploying [Apache VCL](https://vcl.apache.org/) to a [Ku
 You will need the following setup before you can use VCL in Kubernetes
 
 1. Working Kubernetes cluster
-```
-$ kubectl get nodes
+
+```bash
+kubectl get nodes
 NAME      STATUS    ROLES     AGE       VERSION
 master    Ready     master    10d       v1.8.4+coreos.0
 w1        Ready     node      10d       v1.8.4+coreos.0
 w2        Ready     node      10d       v1.8.4+coreos.0
 ```
+
 2. [CNI Genie Network Plugin](https://github.com/Huawei-PaaS/CNI-Genie)
-```
-$ kubectl get pod -n kube-system
+
+```bash
+kubectl get pod -n kube-system
 NAME                                    READY     STATUS    RESTARTS   AGE
 calico-node-9qfl6                       1/1       Running   0          10d
 calico-node-dqjb8                       1/1       Running   0          10d
@@ -36,8 +39,10 @@ kubernetes-dashboard-85d88b455f-q92t4   1/1       Running   0          10d
 nginx-proxy-w1                          1/1       Running   0          10d
 nginx-proxy-w2                          1/1       Running   0          10d
 ```
+
 3. [macvlan](https://github.com/containernetworking/plugins/tree/master/plugins/main/macvlan) plugin configured on the worker nodes where the VCL management daemon pod will be running. This is needed for providing access to the private VM Network on the management nodes. A sample macvlan configuration file (/etc/cni/net.d/20-macvlan.conf) is shown below. This file should be available on each minion where the management node pod will be running. Replace the "master" with the network interface that is connected to the private VM Network.
-```
+
+```bash
 {
 	"name": "vmprivate",
 	"type": "macvlan",
@@ -47,18 +52,22 @@ nginx-proxy-w2                          1/1       Running   0          10d
 	}
 }
 ```
+
 4. The network interface where the management daemon pod will try to get DHCP address needs to have promiscuous mode enabled. This setting should be enabled on each minion where the management node pod will be running.
-```
+
+```bash
 sudo ip link set ens192 promisc on
 ```
 
 5. The VMWare switch where this network interface will be connected also needs to have promiscuous mode enabled.
+
 ![VMWare Promiscuous Mode](images/vmware-promiscuous-mode.png)
 
 6. CNI DHCP Server Daemon configured. This can be setup on systemd enabled system using below steps:
 
   a. Create new file /etc/systemd/system/cni-dhcp.service
-  ```
+
+  ```bash
   [Unit]
   Description=CNI DHCP Server
   After=network.target
@@ -76,13 +85,15 @@ sudo ip link set ens192 promisc on
   ```
 
   b. Enable the cni-dhcp Service
-  ```
+
+  ```bash
   sudo systemctl daemon-reload
   sudo systemctl enable cni-dhcp.service
   ```
 
   c. Start the cni-dhcp Service
-  ```
+
+  ```bash
   sudo systemctl start cni-dhcp.service
   ```
 
@@ -102,8 +113,8 @@ VCL website and management node information is stored within secrets. Refer to [
 
 Update the secrets.yaml file with the following information. all the below secrets can be generated using, where `<text>` is the text that needs to be encrypted.
 
-```
-$ echo "<text>" | base64
+```bash
+echo "<text>" | base64
 ```
 
 mysql_root_pass: Root password for MySQL
@@ -116,45 +127,51 @@ xmlrpc_username: XML RPC username
 ## Deployment
 ### Storage and configuration details
 Create the local storage persistent volumes and secrets used by the pods.
-```
-If using local volumes, else use your storage file,
-$ kubectl create -f local-volumes.yml
 
-$ kubectl create -f secrets.yaml
+```bash
+// If using local volumes, else use your storage file,
+kubectl create -f local-volumes.yml
+
+kubectl create -f secrets.yaml
 ```
 
 ### MySQL database
 Create the MySQL pod
-```
-$ kubectl create -f mysql-deployment.yaml
+
+```bash
+kubectl create -f mysql-deployment.yaml
 ```
 
 Verify if the MySQL resources have been created successfully
-```
-$ kubectl get pod
+
+```bash
+kubectl get pod
 NAME                         READY     STATUS    RESTARTS   AGE
 vcl-mysql-764776f4b8-pd59x   1/1       Running   0          12d
 ```
 
 Verify if the MySQL database services have been created and exposed
-```
-$ kubectl get service
+
+```bash
+kubectl get service
 NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
 kubernetes   ClusterIP   10.233.0.1      <none>        443/TCP                      13d
 vcl-mysql    NodePort    10.233.38.120   <none>        3306:31359/TCP               4d
 ```
 
 Load the VCL database using the database file provided as part of the [Apache VCL Download](https://vcl.apache.org/downloads/download.cgi).
-```
-$ kubectl exec -it <vcl-mysql-pod-name> mysql -u root -p <MySQL Root user password from secrets.yaml> vcl < ~/apache-VCL-2.5/mysql/vcl.sql
 
-e.g. if the pod name is vcl-mysql-764776f4b8-pd59x and the mysql root password is s3cr3t,
-$ kubectl exec -it vcl-mysql-764776f4b8-pd59x mysql -u root -p s3cr3t vcl < ~/apache-VCL-2.5/mysql/vcl.sql
+```bash
+kubectl exec -it <vcl-mysql-pod-name> mysql -u root -p <MySQL Root user password from secrets.yaml> vcl < ~/apache-VCL-2.5/mysql/vcl.sql
+
+// e.g. if the pod name is vcl-mysql-764776f4b8-pd59x and the mysql root password is s3cr3t,
+kubectl exec -it vcl-mysql-764776f4b8-pd59x mysql -u root -p s3cr3t vcl < ~/apache-VCL-2.5/mysql/vcl.sql
 ```
 
 Verify if the database is loaded correctly
-```
-$ kubectl exec -it <vcl-mysql-pod-name> sh
+
+```bash
+kubectl exec -it <vcl-mysql-pod-name> sh
 # mysql -u root -p
 mysql> show databases;
 +--------------------+
@@ -258,19 +275,21 @@ mysql> show tables;
 84 rows in set (0.00 sec)
 mysql> \q
 Bye
-# exit
+exit
 ```
 
 ### Website & Management Daemon
 Once the MySQL database is created, we can create the website and management node daemon pods as below
-```
-$ kubectl create -f frontend-deployment.yaml
-$ kubectl create -f managementnode-deployment.yaml
+
+```bash
+kubectl create -f frontend-deployment.yaml
+kubectl create -f managementnode-deployment.yaml
 ```
 
 Verify if the pods have been created
-```
-$ kubectl get pods
+
+```bash
+kubectl get pods
 NAME                         READY     STATUS    RESTARTS   AGE
 vcl-mgmt-6f5c585777-s9h49    1/1       Running   0          4d
 vcl-mysql-764776f4b8-pd59x   1/1       Running   0          12d
@@ -278,8 +297,9 @@ vcl-web-7f9df965bb-b5rfn     1/1       Running   0          10d
 ```
 
 Verify if the VCL website services have been created and exposed
-```
-$ kubectl get service
+
+```bash
+kubectl get service
 NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
 kubernetes   ClusterIP   10.233.0.1      <none>        443/TCP                      13d
 vcl-mysql    NodePort    10.233.38.120   <none>        3306:31359/TCP               4d
